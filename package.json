@@ -9,8 +9,7 @@
       "test": "jest --passWithNoTests",
       "test:coverage": "jest --coverage",
       "postinstall": "./scripts/postinstall.js",
-      "prepublish": "npm run build && npm run test",
-      "publish": "npm publish --access public"
+      "prepublish": "npm run build && npm run test"
     },
     "keywords": [
       "salesforce",
