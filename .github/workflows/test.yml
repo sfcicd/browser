@@ -4,9 +4,6 @@ on:
   pull_request:
     branches:
       - main
-  push:
-    branches:
-      - main
 
 jobs:
   test:
@@ -21,7 +18,7 @@ jobs:
         with:
           node-version: '18'
       
-      - name: Install SF CLI
+      - name: Install SF CLI and Login
         run: |
             npm install -g @salesforce/cli
             sf org device login -a myOrg   
