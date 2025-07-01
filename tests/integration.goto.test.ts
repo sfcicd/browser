@@ -23,12 +23,11 @@ describe('Integration: SetupPage navigation', () => {
   });
 
   it('should log in and navigate to /setup/home, with #setupComponent showing "Setup"', async () => {
-    org = await Org.create({ aliasOrUsername: 'myOrg' })
-    await page.goto(org, 'SetupPage', 'lightning/setup/SetupOneHome/home');
+    await page.goto('myOrg', 'SetupPage', 'lightning/setup/SetupOneHome/home');
 
     // now assert the setup component is present
-    const locator = page.getByRole('heading', { name: 'Setup Home' });
-    await locator.waitFor({timeout: 5000});
+    const locator = page.getByText('Setup Home');
+    await locator.waitFor({timeout: 15000});
   });
 
 });

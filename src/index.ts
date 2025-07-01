@@ -254,41 +254,58 @@ class ContextExtension {
      * @param reLogin Perform a login even if we already did a login to that org within that browser context
      * @param page Optional page to use for login
      */
-    public async login(org: Org, reLogin: boolean = false, page?: PwPage | Page): Promise<void> {
+    public login(org: Org, reLogin: boolean = false, page?: PwPage | Page): Promise<void> {
+        return new Promise(async (resolve, reject) => {
+            const username = org.getUsername();
+            if (!username) {
+                reject(new Error(`Something went wrong during SFCLI login. The Username of the org is undefined.`));
+                return;
+            }
 
-        const username = org.getUsername();
-        if (!username) {
-            throw new Error(`Something went wrong during SFCLI login. The Username of the org is undefined.`);
-        }
+            if (!reLogin && this.authedOrgs.has(username)) {
+                resolve();
+                return;
+            }
 
-        if (!reLogin && this.authedOrgs.has(username)) {
-            return;
-        }
+            const returnUrl: string = '/lightning/settings/personal/PersonalInformation/home';
 
-        const returnUrl: string = '/lightning/settings/personal/PersonalInformation/home'
+            const loginPage: Page | PwPage = page ? page : await this.context.newPage();
 
-        const loginPage: Page | PwPage = page ? page : await this.context.newPage();
+            loginPage.on('framenavigated', frame => {
+                const url = frame.url();
+                if (/\/ChangePassword\?/i.test(url)) {
+                    reject(new Error(`🛑 Redirected to password change page: ${url}`));
+                }
+            });
 
-        await org.refreshAuth();
-        const conn = org.getConnection();
+            try {
+                await org.refreshAuth();
+                const conn = org.getConnection();
 
-        const response = await axios.post(`${conn.instanceUrl}/services/oauth2/singleaccess`, null, {
-            params: {
-                access_token: conn.accessToken,
-                redirect_uri: returnUrl
-            },
-            maxRedirects: 0,
-            validateStatus: status => status < 400
+                const response = await axios.post(`${conn.instanceUrl}/services/oauth2/singleaccess`, null, {
+                    params: {
+                        access_token: conn.accessToken,
+                        redirect_uri: returnUrl
+                    },
+                    maxRedirects: 0,
+                    validateStatus: status => status < 400
+                });
+
+                const frontdoorUrl = response.data.frontdoor_uri;
+                await loginPage.goto(frontdoorUrl);
+
+                await loginPage.waitForURL(`**${returnUrl}`, { timeout: 15000 });
+
+                this.authedOrgs.set(username, org);
+                if (loginPage !== page) {
+                    await loginPage.close();
+                }
+
+                resolve();
+            } catch (e) {
+                reject(e);
+            }
         });
-
-        const frontdoorUrl = response.data.frontdoor_uri;
-        await loginPage.goto(frontdoorUrl);
-        await loginPage.waitForURL(`**${returnUrl}`);
-
-        this.authedOrgs.set(username, org);
-        if (loginPage !== page) {
-            await loginPage.close();
-        }
     }
 }
 
@@ -348,12 +365,12 @@ export class PageExtension {
 
     /**
      * Navigate to a Salesforce URL built from org, urlType and path.
-     * @param org Salesforce Org instance
+     * @param userName Username that has been autheticated with a Salesforce org already (with SF CLI)
      * @param urlType Type of Salesforce URL to build
      * @param path Absolute path to navigate to
      * @param options Additional navigation options
      */
-    public async goto(org: Org, urlType: SfUrlType, path: string, options?: GotoOptions): Promise<Response | null>;
+    public async goto(userName: string, urlType: SfUrlType, path: string, options?: GotoOptions): Promise<Response | null>;
 
     /**
      * Navigate to a given URL.
@@ -362,11 +379,12 @@ export class PageExtension {
      */
 
     public async goto(...args: any[]): Promise<Response | null> {
-        if (typeof args[0] === 'string') {
+        if (typeof args[1] !== 'string') {
             const [url, options] = args as [string, Parameters<PwPage['goto']>[1]];
             return this.page.goto(url, options);
         } else {
-            const [org, urlType, path, options] = args as [Org, SfUrlType, string, GotoOptions];
+            const [userName, urlType, path, options] = args as [string, SfUrlType, string, GotoOptions];
+            const org = await Org.create({aliasOrUsername: userName});
             const conn = org.getConnection();
             if (/^https?:\/\//.test(path)) throw new Error(`Please provide only the absolute path (without protocol and host). The protocol and host is added automatically matching your org and the given SfUrlType.`);
             let trimmedPath = path.startsWith("/") ? path.slice(1) : path;

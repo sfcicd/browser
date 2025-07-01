@@ -1,6 +1,6 @@
 {
     "name": "@sfcicd/browser",
-    "version": "0.1.0",
+    "version": "0.1.8",
     "description": "Browser automation library based on Playwright, designed for Salesforce CI/CD use cases.",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -8,8 +8,8 @@
       "build": "tsc",
       "test": "jest --passWithNoTests",
       "test:coverage": "jest --coverage",
-      "postinstall": "./scripts/postinstall.js",
-      "prepublish": "npm run build && npm run test"
+      "prepublish": "npm run build && npm run test",
+      "postinstall": "playwright install --with-deps"
     },
     "keywords": [
       "salesforce",
