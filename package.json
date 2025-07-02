@@ -1,6 +1,6 @@
 {
     "name": "@sfcicd/browser",
-    "version": "0.1.9",
+    "version": "0.1.10",
     "description": "Browser automation library based on Playwright, designed for Salesforce CI/CD use cases.",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",

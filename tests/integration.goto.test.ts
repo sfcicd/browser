@@ -13,7 +13,7 @@ describe('Integration: SetupPage navigation', () => {
 
   beforeAll(async () => {
 
-    browser = await chromium.launch({ headless: true });
+    browser = await chromium.launch({ headless: false });
     context = await browser.newContext();
     page = await context.newPage();
   });
@@ -26,8 +26,7 @@ describe('Integration: SetupPage navigation', () => {
     await page.goto('myOrg', 'SetupPage', 'lightning/setup/SetupOneHome/home');
 
     // now assert the setup component is present
-    const locator = page.getByText('Setup Home');
-    await locator.waitFor({timeout: 15000});
+    await page.waitForSelector('text=Setup Home');
   });
 
 });

@@ -271,10 +271,15 @@ class ContextExtension {
 
             const loginPage: Page | PwPage = page ? page : await this.context.newPage();
 
-            loginPage.on('framenavigated', frame => {
+            loginPage.on('framenavigated', async frame => {
                 const url = frame.url();
                 if (/\/ChangePassword\?/i.test(url)) {
-                    reject(new Error(`🛑 Redirected to password change page: ${url}`));
+                    const cancelButton = await frame.waitForSelector('#cancel-button', { timeout: 10000 }).catch(() => null);
+                    if (cancelButton) {
+                        await cancelButton.click();
+                    } else {
+                        reject(new Error(`🛑 Redirected to password change page: ${url}`));
+                    }
                 }
             });
 
