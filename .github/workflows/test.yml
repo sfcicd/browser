@@ -21,7 +21,11 @@ jobs:
       - name: Install SF CLI and Login
         run: |
             npm install -g @salesforce/cli
-            sf org device login -a myOrg 2>&1 | grep -v 'Login successful for'   
+              tmpLog=$(mktemp)
+              sf org device login -a myOrg 2>&1 | tee "$tmpLog"
+              echo "--- Sanitized output ---"
+              sed 's/Login successful for .*/Login successful .../' "$tmpLog"
+              rm "$tmpLog"   
 
       - name: Install dependencies
         run: npm ci
