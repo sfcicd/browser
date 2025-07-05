@@ -29,7 +29,7 @@ jobs:
       - name: Install SF CLI and Login
         run: |
           npm install -g @salesforce/cli
-          sf org device login -a myOrg 2>&1 | sed 's/Login successful for .*/Login successful .../'  
+          sf org device login -a myOrg 2>&1 | grep -v 'Login successful for'  
 
       - name: Install dependencies
         run: npm ci
